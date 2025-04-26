@@ -1,16 +1,16 @@
 import streamlit as st
 import pandas as pd
+import seaborn as sns
+import matplotlib.pyplot as plt
 import requests
 
-st.set_page_config(page_title="Earthquake Dashboard", page_icon="🌎", layout="wide")
+st.set_page_config(page_title="Earthquake Correlation Dashboard", page_icon="🌎", layout="wide")
+st.title("🌎 Earthquake Correlation Dashboard")
+st.write("Analyze relationships between earthquake features")
 
-st.title("🌎 Earthquake Dashboard")
-st.write("Real-time Earthquake data from USGS")
-
-# Fetch earthquake data from USGS API
 @st.cache_data
 def fetch_earthquake_data():
-    url = "https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_day.geojson"
+    url = "https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_month.geojson"
     response = requests.get(url)
     data = response.json()
 
@@ -34,9 +34,19 @@ def fetch_earthquake_data():
 # Load data
 df = fetch_earthquake_data()
 
-# Show map
-st.map(df[['latitude', 'longitude']])
+st.subheader("📊 Raw Earthquake Data")
+st.dataframe(df)
 
-# Show table
-st.subheader("📋 Latest Earthquake Data")
-st.dataframe(df.sort_values("time", ascending=False), use_container_width=True)
+st.subheader("📈 Correlation Analysis")
+
+# Choose columns for correlation
+numeric_cols = df.select_dtypes(include=['float64', 'int64']).columns.tolist()
+
+if len(numeric_cols) >= 2:
+    corr = df[numeric_cols].corr()
+
+    fig, ax = plt.subplots(figsize=(8, 6))
+    sns.heatmap(corr, annot=True, cmap="coolwarm", fmt=".2f", ax=ax)
+    st.pyplot(fig)
+else:
+    st.warning("Not enough numeric data to compute correlations.")
